@@ -1,0 +1,453 @@
+body {
+    margin: 0;
+    background-color: #202020;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+/*
+ * Escenario del videojuego.
+ */
+#escenario {
+    position: relative;
+    width: min(800px, calc(100vw - 32px));
+    margin: auto;
+    isolation: isolate;
+}
+
+#escenario::before {
+    position: absolute;
+    z-index: 2;
+    inset: -8px;
+    border: 1px solid rgba(81, 234, 255, 0.8);
+    border-radius: 12px;
+    outline: 1px solid rgba(203, 85, 255, 0.72);
+    outline-offset: 3px;
+    background: transparent;
+    box-shadow:
+        0 0 12px rgba(53, 223, 255, 0.62),
+        0 0 30px rgba(95, 91, 255, 0.24),
+        inset 0 0 12px rgba(53, 223, 255, 0.18);
+    content: "";
+    pointer-events: none;
+}
+
+#juego {
+    position: relative;
+    z-index: 1;
+    box-sizing: border-box;
+    width: 100%;
+    height: auto;
+    background-color: #000002;
+    border: 1px solid rgba(86, 229, 255, 0.82);
+    border-radius: 5px;
+    box-shadow:
+        inset 0 0 24px rgba(23, 147, 255, 0.16),
+        0 0 18px rgba(35, 198, 255, 0.28);
+    display: block;
+}
+
+#controles-moviles {
+    display: none;
+    position: absolute;
+    z-index: 4;
+    inset: 0;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/*
+ * Panel modal unificado (Menú, Pausa, Transición de Stage, Victoria, Derrota)
+ */
+.panel-juego {
+    position: absolute;
+    z-index: 6;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(5, 11, 25, 0.82);
+    box-sizing: border-box;
+}
+
+.panel-juego[hidden],
+.acciones-panel button[hidden],
+.selector-naves[hidden] {
+    display: none;
+}
+
+.contenido-panel {
+    width: min(490px, 100%);
+    max-height: calc(100% - 12px);
+    overflow-y: auto;
+    padding: 18px 20px;
+    border: 1px solid rgba(101, 234, 255, 0.65);
+    border-radius: 14px;
+    background: rgba(16, 27, 46, 0.96);
+    box-shadow:
+        0 0 28px rgba(53, 223, 255, 0.25),
+        inset 0 0 16px rgba(53, 223, 255, 0.1);
+    color: white;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.contenido-panel h2 {
+    margin: 0 0 8px;
+    color: #65eaff;
+    text-shadow: 0 0 14px rgba(53, 223, 255, 0.65);
+    font-size: 24px;
+}
+
+.contenido-panel p {
+    margin: 0 0 14px;
+    line-height: 1.4;
+    color: #e4f7ff;
+}
+
+.acciones-panel {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
+
+.acciones-panel button {
+    min-width: 140px;
+    min-height: 44px;
+    padding: 10px 18px;
+    border: 1px solid rgba(117, 255, 255, 0.85);
+    border-radius: 10px;
+    background: #173f57;
+    color: #ffffff;
+    font: bold 15px Arial, sans-serif;
+    cursor: pointer;
+    transition: background-color 140ms ease, transform 100ms ease;
+}
+
+.acciones-panel button.boton-secundario {
+    border-color: rgba(203, 125, 255, 0.8);
+    background: #28234a;
+}
+
+.acciones-panel button:hover,
+.acciones-panel button:focus-visible {
+    background: #245f80;
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+.acciones-panel button.boton-secundario:hover,
+.acciones-panel button.boton-secundario:focus-visible {
+    background: #3d3470;
+}
+
+.acciones-panel button.boton-naves {
+    border-color: rgba(255, 198, 88, 0.88);
+    background: #473114;
+    color: #fff3d1;
+}
+
+.acciones-panel button.boton-naves:hover,
+.acciones-panel button.boton-naves:focus-visible {
+    background: #66461c;
+}
+
+.selector-naves {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border: 1px solid rgba(101, 234, 255, 0.32);
+    border-radius: 10px;
+    background: rgba(8, 15, 29, 0.72);
+}
+
+.fila-selector-nave {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.etiqueta-stage-nave {
+    font: bold 14px Arial, sans-serif;
+    color: #79efff;
+    min-width: 64px;
+    text-align: left;
+}
+
+.opciones-nave {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    justify-content: flex-end;
+}
+
+.opcion-nave {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    width: 94px;
+    padding: 5px 4px;
+    border: 1px solid rgba(117, 255, 255, 0.35);
+    border-radius: 8px;
+    background: rgba(22, 39, 64, 0.75);
+    color: #d6f5ff;
+    font: 12px Arial, sans-serif;
+    cursor: pointer;
+    transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.opcion-nave img {
+    width: 28px;
+    height: 30px;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.opcion-nave:hover,
+.opcion-nave:focus-visible {
+    border-color: #75ffff;
+    background: rgba(34, 65, 102, 0.9);
+}
+
+.opcion-nave.activa {
+    border: 2px solid #57f7ff;
+    background: rgba(25, 86, 118, 0.95);
+    box-shadow: 0 0 12px rgba(87, 247, 255, 0.45);
+    color: #ffffff;
+    font-weight: bold;
+}
+
+#estado-inicio {
+    min-height: 1.3em;
+    margin: 12px 0 0;
+    font-size: 13px;
+    color: #ffd166;
+}
+
+#orientacion-overlay {
+    display: none;
+}
+
+#joystick {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    left: calc(3% + env(safe-area-inset-left));
+    bottom: calc(4% + env(safe-area-inset-bottom));
+    width: clamp(88px, 22svh, 144px);
+    height: clamp(88px, 22svh, 144px);
+    border: 2px solid rgba(81, 234, 255, 0.65);
+    border-radius: 50%;
+    background: rgba(26, 68, 91, 0.55);
+    box-shadow: inset 0 0 18px rgba(53, 223, 255, 0.2), 0 0 12px rgba(53, 223, 255, 0.25);
+    touch-action: none;
+    pointer-events: auto;
+}
+
+#joystick-perilla {
+    width: 42%;
+    height: 42%;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    background: rgba(53, 195, 255, 0.72);
+    box-shadow: 0 0 12px rgba(53, 223, 255, 0.55);
+    pointer-events: none;
+}
+
+.acciones-tactiles {
+    display: flex;
+    position: absolute;
+    right: calc(2% + env(safe-area-inset-right));
+    bottom: calc(3% + env(safe-area-inset-bottom));
+    align-items: center;
+    pointer-events: none;
+}
+
+.acciones-tactiles #boton-disparo {
+    min-width: 48px;
+    min-height: 48px;
+    width: clamp(48px, 12svh, 64px);
+    height: clamp(48px, 12svh, 64px);
+    display: grid;
+    place-items: center;
+    padding: 10px;
+    border: 1px solid rgba(129, 233, 255, 0.76);
+    border-radius: 50%;
+    background: rgba(22, 57, 79, 0.55);
+    color: white;
+    box-shadow: 0 0 10px rgba(53, 223, 255, 0.18);
+    touch-action: none;
+    pointer-events: auto;
+}
+
+.acciones-tactiles #boton-disparo svg {
+    width: 100%;
+    height: 100%;
+    fill: #b7f5ff;
+    stroke: #e8fcff;
+    stroke-linecap: round;
+    stroke-width: 1;
+    filter: drop-shadow(0 0 4px rgba(53, 223, 255, 0.6));
+    pointer-events: none;
+}
+
+.acciones-tactiles #boton-disparo:active,
+.acciones-tactiles #boton-disparo[aria-pressed="true"] {
+    background: rgba(29, 136, 177, 0.72);
+}
+
+.boton-pausa-movil {
+    position: absolute;
+    top: calc(3% + env(safe-area-inset-top));
+    right: calc(3% + env(safe-area-inset-right));
+    width: 64px;
+    height: 44px;
+    min-width: 64px;
+    min-height: 44px;
+    padding: 0 8px 2px;
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    border-radius: 12px;
+    background: rgba(10, 20, 34, 0.42);
+    color: rgba(255, 255, 255, 0.85);
+    font: bold 20px Arial, sans-serif;
+    touch-action: manipulation;
+    pointer-events: auto;
+}
+
+.boton-pausa-movil:active,
+.boton-pausa-movil[aria-pressed="true"] {
+    background: rgba(10, 20, 34, 0.68);
+}
+
+@media (pointer: coarse), (max-width: 700px) {
+    #controles-moviles {
+        display: flex;
+    }
+}
+
+@media (pointer: coarse) and (orientation: landscape), (max-width: 700px) and (orientation: landscape) {
+    body {
+        min-height: 100svh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    body > h1,
+    body > p {
+        display: none;
+    }
+
+    #escenario {
+        width: min(calc(100vw - 16px), calc(160svh - 16px));
+        margin: 0 auto;
+    }
+}
+
+html:fullscreen #escenario,
+#escenario:fullscreen {
+    width: 100vw;
+    height: 100svh;
+    margin: 0;
+    border-radius: 0;
+}
+
+html:fullscreen #juego,
+#escenario:fullscreen #juego {
+    height: 100%;
+    border-radius: 0;
+}
+
+html:fullscreen #escenario::before,
+#escenario:fullscreen::before {
+    inset: 0;
+    border: 0;
+    border-radius: 0;
+    outline: 0;
+    box-shadow: none;
+}
+
+@media (pointer: coarse) and (orientation: portrait), (max-width: 700px) and (orientation: portrait) {
+    #orientacion-overlay {
+        position: fixed;
+        z-index: 10;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+        background: rgba(8, 15, 30, 0.97);
+    }
+
+    .orientacion-mensaje {
+        width: min(100%, 380px);
+        color: white;
+        text-align: center;
+    }
+
+    .orientacion-mensaje h2 {
+        margin-top: 0;
+        color: #65eaff;
+    }
+
+    .orientacion-mensaje button {
+        min-width: 48px;
+        min-height: 48px;
+        padding: 12px 18px;
+        border: 1px solid rgba(81, 234, 255, 0.75);
+        border-radius: 12px;
+        background: #16394f;
+        color: white;
+        font: bold 16px Arial, sans-serif;
+    }
+
+    #orientacion-estado {
+        min-height: 1.3em;
+        font-size: 14px;
+    }
+
+    #escenario,
+    body > h1,
+    body > p {
+        visibility: hidden;
+    }
+
+    #controles-moviles {
+        display: none;
+    }
+}
+
+@supports not (height: 1svh) {
+    #joystick {
+        width: clamp(88px, 22vh, 144px);
+        height: clamp(88px, 22vh, 144px);
+    }
+
+    .acciones-tactiles button {
+        width: clamp(48px, 12vh, 64px);
+        height: clamp(48px, 12vh, 64px);
+    }
+
+    @media (pointer: coarse) and (orientation: landscape), (max-width: 700px) and (orientation: landscape) {
+        body {
+            min-height: 100vh;
+        }
+
+        #escenario {
+            width: min(calc(100vw - 16px), calc(160vh - 16px));
+        }
+    }
+
+    html:fullscreen #escenario,
+    #escenario:fullscreen {
+        height: 100vh;
+    }
+}

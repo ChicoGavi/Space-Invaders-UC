@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <title>Guardianes del Eje</title>
+
+    <link rel="stylesheet" href="css/estilos.css?v=3.2">
+</head>
+
+<body>
+
+    <h1>Guardianes del Eje</h1>
+
+    <!--
+        Este canvas será el escenario donde
+        JavaScript dibujará nuestro videojuego (Stage 1, Stage 2 y Stage 3).
+    -->
+    <div id="escenario">
+        <canvas
+            id="juego"
+            width="800"
+            height="500">
+        </canvas>
+
+        <!-- Controles táctiles para dispositivos móviles -->
+        <div id="controles-moviles" aria-label="Controles táctiles">
+            <div id="joystick" role="group" aria-label="Joystick táctil para mover la nave">
+                <div id="joystick-perilla"></div>
+            </div>
+            <div class="acciones-tactiles">
+                <button id="boton-disparo" type="button" aria-label="Disparar" aria-pressed="false">
+                    <svg viewBox="0 0 24 32" aria-hidden="true" focusable="false">
+                        <path d="M12 1C8.7 5.2 5 9.2 5 16v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V16c0-6.8-3.7-10.8-7-15Z"></path>
+                        <path d="M6 22h12M6 26h12"></path>
+                    </svg>
+                </button>
+            </div>
+            <button id="boton-pausa" class="boton-pausa-movil" type="button" aria-label="Pausar juego" aria-pressed="false">Ⅱ</button>
+        </div>
+
+        <!-- Panel modal unificado para Menú, Selector de Naves, Pausa, Transición de Stage, Victoria y Derrota -->
+        <section id="panel-juego" class="panel-juego" role="dialog" aria-modal="true" aria-labelledby="titulo-panel" aria-live="polite">
+            <div class="contenido-panel">
+                <h2 id="titulo-panel">Guardianes del Eje</h2>
+                <p id="texto-panel">Prepárate para defender el eje.</p>
+
+                <!-- Sub-panel de Selección de Naves por Stage -->
+                <div id="selector-naves" class="selector-naves" hidden>
+                    <div class="fila-selector-nave" data-stage="1">
+                        <span class="etiqueta-stage-nave">Stage 1:</span>
+                        <div class="opciones-nave" role="group" aria-label="Nave para Stage 1">
+                            <button type="button" class="opcion-nave activa" data-stage="1" data-nave="1">
+                                <img src="img/jugador.png" alt="Nave Clásica">
+                                <span>Clásica</span>
+                            </button>
+                            <button type="button" class="opcion-nave" data-stage="1" data-nave="2">
+                                <img src="img/jugador_stage_2.gif" alt="Nave Artillada">
+                                <span>Artillada</span>
+                            </button>
+                            <button type="button" class="opcion-nave" data-stage="1" data-nave="3">
+                                <img src="img/jugador_stage_3_idle.png" alt="Nave de Cristal">
+                                <span>Cristal</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="fila-selector-nave" data-stage="2">
+                        <span class="etiqueta-stage-nave">Stage 2:</span>
+                        <div class="opciones-nave" role="group" aria-label="Nave para Stage 2">
+                            <button type="button" class="opcion-nave" data-stage="2" data-nave="1">
+                                <img src="img/jugador.png" alt="Nave Clásica">
+                                <span>Clásica</span>
+                            </button>
+                            <button type="button" class="opcion-nave activa" data-stage="2" data-nave="2">
+                                <img src="img/jugador_stage_2.gif" alt="Nave Artillada">
+                                <span>Artillada</span>
+                            </button>
+                            <button type="button" class="opcion-nave" data-stage="2" data-nave="3">
+                                <img src="img/jugador_stage_3_idle.png" alt="Nave de Cristal">
+                                <span>Cristal</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="fila-selector-nave" data-stage="3">
+                        <span class="etiqueta-stage-nave">Stage 3:</span>
+                        <div class="opciones-nave" role="group" aria-label="Nave para Stage 3">
+                            <button type="button" class="opcion-nave" data-stage="3" data-nave="1">
+                                <img src="img/jugador.png" alt="Nave Clásica">
+                                <span>Clásica</span>
+                            </button>
+                            <button type="button" class="opcion-nave" data-stage="3" data-nave="2">
+                                <img src="img/jugador_stage_2.gif" alt="Nave Artillada">
+                                <span>Artillada</span>
+                            </button>
+                            <button type="button" class="opcion-nave activa" data-stage="3" data-nave="3">
+                                <img src="img/jugador_stage_3_idle.png" alt="Nave de Cristal">
+                                <span>Cristal</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="acciones-panel">
+                    <button id="iniciar-stage1" type="button">Jugar Campaña (Stage 1)</button>
+                    <button id="iniciar-stage2" type="button" class="boton-secundario">Jugar Stage 2</button>
+                    <button id="iniciar-stage3" type="button" class="boton-secundario">Jugar Stage 3</button>
+                    <button id="abrir-naves" type="button" class="boton-naves">Naves</button>
+                    <button id="cerrar-naves" type="button" hidden>Guardar y Volver</button>
+                    <button id="siguiente-stage" type="button" hidden>Avanzar al siguiente Stage</button>
+                    <button id="continuar-juego" type="button" hidden>Continuar</button>
+                    <button id="reiniciar-juego" type="button" hidden>Reiniciar Stage</button>
+                    <button id="menu-principal" type="button" class="boton-secundario" hidden>Menú principal</button>
+                </div>
+                <p id="estado-inicio" role="status" aria-live="polite"></p>
+            </div>
+        </section>
+    </div>
+
+    <div id="orientacion-overlay" role="dialog" aria-modal="true" aria-labelledby="orientacion-titulo">
+        <div class="orientacion-mensaje">
+            <h2 id="orientacion-titulo">Juega en horizontal</h2>
+            <p>Gira tu celular para disfrutar el juego con los controles a los lados.</p>
+            <button id="boton-orientacion" type="button">Entrar a pantalla completa</button>
+            <p id="orientacion-estado" role="status" aria-live="polite"></p>
+        </div>
+    </div>
+
+    <p>Muévete con las flechas o WASD, dispara con ESPACIO o CLIC IZQUIERDO y pausa con P o ESC.</p>
+    <p>En celular horizontal, usa el joystick y los botones táctiles dentro del juego.</p>
+
+    <!-- Módulos JavaScript del videojuego -->
+    <script src="js/recursos.js?v=3.2"></script>
+    <script src="js/sonido.js?v=3.2"></script>
+    <script src="js/entrada.js?v=3.2"></script>
+    <script src="js/efectos.js?v=3.2"></script>
+    <script src="js/stage1.js?v=3.2"></script>
+    <script src="js/stage2.js?v=3.2"></script>
+    <script src="js/stage3.js?v=3.2"></script>
+    <script src="js/juego.js?v=3.2"></script>
+
+</body>
+
+</html>

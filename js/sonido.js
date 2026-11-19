@@ -217,10 +217,41 @@ window.Guardianes = window.Guardianes || {};
         }
     }
 
+    /**
+     * Fanfarria triunfal de Victoria / Créditos (arpegio ascendente de sintetizador).
+     */
+    function reproducirFanfarriaVictoria() {
+        const ctx = obtenerContexto();
+        if (!ctx) return;
+
+        const ahora = ctx.currentTime;
+        const notas = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99];
+        notas.forEach(function(frec, idx) {
+            const inicio = ahora + idx * 0.11;
+            const dur = idx === notas.length - 1 ? 0.65 : 0.18;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(frec, inicio);
+
+            gain.gain.setValueAtTime(0.001, inicio);
+            gain.gain.linearRampToValueAtTime(0.14, inicio + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, inicio + dur);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(inicio);
+            osc.stop(inicio + dur + 0.02);
+        });
+    }
+
     G.Sonido = {
         reproducirDisparo,
         reproducirLaser,
         reproducirImpactoNave,
-        reproducirAparicionJefe
+        reproducirAparicionJefe,
+        reproducirFanfarriaVictoria
     };
 })(window.Guardianes);

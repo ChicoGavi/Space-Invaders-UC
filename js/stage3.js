@@ -62,10 +62,10 @@ window.Guardianes = window.Guardianes || {};
     let escudoCristalActivo = false;
 
     let proximoDrone = 1.0;
-    let proximoBeetle = 10.0;
-    let proximoSkiff = 22.0;
-    let proximoDredger = 36.0;
-    let proximoPotenciador = 9.0;
+    let proximoBeetle = 9.0;
+    let proximoSkiff = 18.0;
+    let proximoDredger = 30.0;
+    let proximoPotenciador = 17.0;
 
     let dredgersDerrotados = 0;
     let jefeActivo = false;
@@ -101,10 +101,10 @@ window.Guardianes = window.Guardianes || {};
         escudoCristalActivo = false;
 
         proximoDrone = 1.0;
-        proximoBeetle = 9.0;
-        proximoSkiff = 19.0;
-        proximoDredger = 32.0;
-        proximoPotenciador = 8.0;
+        proximoBeetle = 8.0;
+        proximoSkiff = 17.0;
+        proximoDredger = 28.0;
+        proximoPotenciador = 17.0;
         contadorPotenciadores = 0;
 
         dredgersDerrotados = 0;
@@ -256,26 +256,26 @@ window.Guardianes = window.Guardianes || {};
             // 1. Crystal Drone (rápido, aparece durante toda la etapa)
             if (tiempoEtapa >= proximoDrone) {
                 crearCrystalDrone(canvas);
-                proximoDrone = tiempoEtapa + (tiempoEtapa > 30 ? 1.8 : 2.3);
+                proximoDrone = tiempoEtapa + (tiempoEtapa > 25 ? 1.45 : 1.9);
             }
 
             // 2. Crystal Cowl / Beetle (escarabajo veloz)
             if (tiempoEtapa >= proximoBeetle) {
                 crearCrystalBeetle(canvas);
-                proximoBeetle = tiempoEtapa + 3.6;
+                proximoBeetle = tiempoEtapa + 2.95;
             }
 
             // 3. Cavern Skiff (nave artillada media)
             if (tiempoEtapa >= proximoSkiff) {
                 crearCavernSkiff(canvas);
-                proximoSkiff = tiempoEtapa + 6.5;
+                proximoSkiff = tiempoEtapa + 5.4;
             }
 
             // 4. Crystal Dredger / Heavy Flyer (sub-jefe perforador pesado)
             const hayDredgerVivo = enemigos.some(function(e) { return e.tipo === 4; });
             if (tiempoEtapa >= proximoDredger && !hayDredgerVivo) {
                 crearCrystalDredger(canvas);
-                proximoDredger = tiempoEtapa + 18.0;
+                proximoDredger = tiempoEtapa + 15.0;
             }
         }
 
@@ -541,10 +541,10 @@ window.Guardianes = window.Guardianes || {};
                 yBase: 16,
                 ancho: ancho,
                 alto: alto,
-                vx: 125,
+                vx: 140,
                 direccion: 1,
-                vida: 360,
-                vidaMaxima: 360,
+                vida: 240,
+                vidaMaxima: 240,
                 estado: "entrada", // "entrada", "idle", "preparando_taladro", "embestida_taladro", "retorno_taladro", "preparando_laser", "disparando_laser", "derrotado"
                 tiempoEstado: 0,
                 proximoDisparoBase: tiempoEtapa + 1.2,
@@ -591,8 +591,8 @@ window.Guardianes = window.Guardianes || {};
                 jefe.proximoDisparoBase = tiempoEtapa + (jefe.vida <= jefe.vidaMaxima * 0.5 ? 1.15 : 1.45);
             }
 
-            // Cada 4.2 segundos alterna entre Ataque 1 (Drill Rush) y Ataque 2 (Crystal Barrage & Laser)
-            if (jefe.tiempoEstado >= 4.2) {
+            // Cada 3.6 segundos alterna entre Ataque 1 (Drill Rush) y Ataque 2 (Crystal Barrage & Laser)
+            if (jefe.tiempoEstado >= 3.6) {
                 jefe.cicloAtaque++;
                 if (jefe.cicloAtaque % 2 === 1) {
                     cambiarEstadoJefe("preparando_taladro");
@@ -742,7 +742,8 @@ window.Guardianes = window.Guardianes || {};
     }
 
     function actualizarPotenciadores(deltaSegundos, canvas) {
-        if (!jefeActivo && tiempoEtapa >= proximoPotenciador) {
+        const jefeDestruyendose = jefe && jefe.estado === "derrotado";
+        if (!jefeDestruyendose && !victoriaEnCurso && tiempoEtapa >= proximoPotenciador) {
             const tipo = tiposPotenciador[contadorPotenciadores % tiposPotenciador.length];
             contadorPotenciadores++;
             potenciadores.push({
@@ -753,7 +754,7 @@ window.Guardianes = window.Guardianes || {};
                 alto: 40,
                 vy: 82
             });
-            proximoPotenciador = tiempoEtapa + 13.5;
+            proximoPotenciador = tiempoEtapa + 25.0;
         }
 
         for (let i = potenciadores.length - 1; i >= 0; i--) {

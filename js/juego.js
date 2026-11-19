@@ -1,10 +1,10 @@
 /**
- * Controlador Principal — Guardianes del Eje (Stage 1, Stage 2 y Stage 3).
+ * Controlador Principal — Guardianes del Eje (Stage 1, Stage 2, Stage 3, Menú 3D, Créditos Animados y Persistencia en Storage).
  * Responsabilidades:
  * - Máquina de estados única ("menu", "naves", "jugando", "pausado", "stage1-completado", "stage2-completado", "victoria", "derrota", "tiempo-agotado")
- * - Único Game Loop (requestAnimationFrame) con guardia rafActivo y deltaSegundos limitado a 0.05s
- * - Orquestación entre Stage 1, Stage 2 y Stage 3, conservando puntuación en modo campaña
- * - Selector de Naves por Stage y aplicación de sacudida de pantalla (Screen Shake) al aparecer cada Jefe Final
+ * - Animación 3D de Space Invaders en tiempo real en el Menú Principal, Hangar de Naves y Efectos de Victoria en Créditos
+ * - Desbloqueo progresivo y persistencia automática en localStorage/sessionStorage (mantiene avance, puntos y naves al recargar)
+ * - Pantalla de Créditos animada con efectos de victoria al superar los 3 Stages o al acceder por la ruta `/creditos`
  */
 window.Guardianes = window.Guardianes || {};
 
@@ -17,6 +17,7 @@ window.Guardianes = window.Guardianes || {};
     const textoPanel = document.getElementById("texto-panel");
     const estadoInicio = document.getElementById("estado-inicio");
     const selectorNaves = document.getElementById("selector-naves");
+    const bloqueCreditos = document.getElementById("bloque-creditos");
 
     const botonIniciarStage1 = document.getElementById("iniciar-stage1");
     const botonIniciarStage2 = document.getElementById("iniciar-stage2");
@@ -29,11 +30,20 @@ window.Guardianes = window.Guardianes || {};
     const botonMenu = document.getElementById("menu-principal");
     const botonesOpcionNave = document.querySelectorAll(".opcion-nave");
 
-    let stageActual = 1;
+    const nombresBaseNaves = {
+        1: "Clásica",
+        2: "Artillada",
+        3: "Cristal"
+    };
+
+    // Restaurar sesión previa desde localStorage / sessionStorage
+    const sesionInicial = G.Efectos.obtenerSesion();
+    let stageActual = sesionInicial.stageActual || 1;
     let estadoJuego = "menu";
-    let puntuacionTotal = 0;
-    let puntuacionInicioStage = 0;
+    let puntuacionTotal = sesionInicial.puntuacionTotal || 0;
+    let puntuacionInicioStage = sesionInicial.puntuacionInicioStage || 0;
     let ultimoFrame = null;
+    let tiempoAnimacionMenu = 0;
     let rafActivo = false;
 
     const contextoJuego = {
@@ -45,14 +55,54 @@ window.Guardianes = window.Guardianes || {};
         },
         sumarPuntos(puntos) {
             puntuacionTotal += puntos;
+            G.Efectos.actualizarSesion({
+                stageActual: stageActual,
+                puntuacionTotal: puntuacionTotal,
+                puntuacionInicioStage: puntuacionInicioStage
+            });
         },
         alCompletarStage1() {
+            // Al ganar Stage 1: se desbloquea Stage 2 y la Nave 2 (además de la Nave 1) y se guarda en Storage
+            G.Efectos.desbloquearStage(2);
+            G.Efectos.desbloquearNave(1);
+            G.Efectos.desbloquearNave(2);
+            G.Efectos.actualizarSesion({
+                stageActual: 2,
+                puntuacionTotal: puntuacionTotal,
+                puntuacionInicioStage: puntuacionTotal,
+                ultimoEstadoMenu: "stage1-completado"
+            });
             cambiarEstado("stage1-completado");
         },
         alCompletarStage2() {
+            // Al ganar Stage 2: se desbloquea Stage 3 y la Nave 3 y se guarda en Storage
+            G.Efectos.desbloquearStage(3);
+            G.Efectos.desbloquearNave(2);
+            G.Efectos.desbloquearNave(3);
+            G.Efectos.actualizarSesion({
+                stageActual: 3,
+                puntuacionTotal: puntuacionTotal,
+                puntuacionInicioStage: puntuacionTotal,
+                ultimoEstadoMenu: "stage2-completado"
+            });
             cambiarEstado("stage2-completado");
         },
         alGanarJuego() {
+            // Al superar el Stage 3: todo desbloqueado, se guarda en Storage y aparecen los Créditos con efectos de victoria
+            G.Efectos.desbloquearStage(2);
+            G.Efectos.desbloquearStage(3);
+            G.Efectos.desbloquearNave(1);
+            G.Efectos.desbloquearNave(2);
+            G.Efectos.desbloquearNave(3);
+            G.Efectos.actualizarSesion({
+                stageActual: 3,
+                puntuacionTotal: puntuacionTotal,
+                puntuacionInicioStage: puntuacionTotal,
+                ultimoEstadoMenu: "victoria"
+            });
+            if (G.Sonido && G.Sonido.reproducirFanfarriaVictoria) {
+                G.Sonido.reproducirFanfarriaVictoria();
+            }
             cambiarEstado("victoria");
         },
         alPerderPartida() {
@@ -79,14 +129,44 @@ window.Guardianes = window.Guardianes || {};
         ctx.fillText(mensaje, canvas.width / 2, canvas.height / 2);
     }
 
+    function sincronizarBotonesStages() {
+        const st2Desbloqueado = G.Efectos.estaStageDesbloqueado(2);
+        const st3Desbloqueado = G.Efectos.estaStageDesbloqueado(3);
+
+        botonIniciarStage2.disabled = !st2Desbloqueado;
+        botonIniciarStage2.textContent = st2Desbloqueado ? "Jugar Stage 2" : "Stage 2 🔒";
+
+        botonIniciarStage3.disabled = !st3Desbloqueado;
+        botonIniciarStage3.textContent = st3Desbloqueado ? "Jugar Stage 3" : "Stage 3 🔒";
+    }
+
     function sincronizarTarjetasNaves() {
         botonesOpcionNave.forEach(function(boton) {
             const st = Number(boton.getAttribute("data-stage"));
             const nv = Number(boton.getAttribute("data-nave"));
+            const habilitada = G.Efectos.estaNaveHabilitadaParaStage(st, nv);
             const seleccionada = G.Efectos.obtenerNaveParaStage(st) === nv;
+            const spanNombre = boton.querySelector(".nombre-opcion-nave");
+
+            boton.disabled = !habilitada;
+            boton.classList.toggle("bloqueada", !habilitada);
             boton.classList.toggle("activa", seleccionada);
             boton.setAttribute("aria-pressed", String(seleccionada));
+
+            if (spanNombre) {
+                spanNombre.textContent = habilitada
+                    ? nombresBaseNaves[nv]
+                    : `${nombresBaseNaves[nv]} 🔒`;
+            }
         });
+    }
+
+    function reiniciarAnimacionCreditos() {
+        if (!bloqueCreditos) return;
+        bloqueCreditos.style.animation = "none";
+        // Forzar reflow para reiniciar las animaciones escalonadas de entrada
+        void bloqueCreditos.offsetWidth;
+        bloqueCreditos.style.animation = "";
     }
 
     function actualizarPanel() {
@@ -103,6 +183,8 @@ window.Guardianes = window.Guardianes || {};
         const mostrar = estadosConPanel.includes(estadoJuego);
         panelJuego.hidden = !mostrar;
 
+        sincronizarBotonesStages();
+
         const esTransicionStage = estadoJuego === "stage1-completado" || estadoJuego === "stage2-completado";
         botonIniciarStage1.hidden = estadoJuego !== "menu";
         botonIniciarStage2.hidden = estadoJuego !== "menu";
@@ -110,9 +192,17 @@ window.Guardianes = window.Guardianes || {};
         botonAbrirNaves.hidden = estadoJuego !== "menu";
         botonCerrarNaves.hidden = estadoJuego !== "naves";
         selectorNaves.hidden = estadoJuego !== "naves";
+        if (bloqueCreditos) {
+            const mostrarCreditos = estadoJuego === "victoria";
+            const estabaOculto = bloqueCreditos.hidden;
+            bloqueCreditos.hidden = !mostrarCreditos;
+            if (mostrarCreditos && estabaOculto) {
+                reiniciarAnimacionCreditos();
+            }
+        }
         botonSiguienteStage.hidden = !esTransicionStage;
         botonContinuar.hidden = estadoJuego !== "pausado";
-        botonReiniciar.hidden = ["menu", "naves", "stage1-completado", "stage2-completado"].includes(estadoJuego);
+        botonReiniciar.hidden = ["menu", "naves", "stage1-completado", "stage2-completado", "victoria"].includes(estadoJuego);
         botonMenu.hidden = estadoJuego === "menu" || estadoJuego === "naves";
 
         if (estadoJuego === "stage1-completado") {
@@ -123,25 +213,36 @@ window.Guardianes = window.Guardianes || {};
 
         G.Entrada.actualizarBotonPausaMovil(estadoJuego === "pausado");
 
+        const sesionActual = G.Efectos.obtenerSesion();
+
         if (estadoJuego === "menu") {
-            tituloPanel.textContent = "Guardianes del Eje";
-            textoPanel.textContent = "Prepárate para defender el eje. Selecciona una misión o personaliza tus naves.";
+            if (G.Efectos.esModoPruebas && G.Efectos.esModoPruebas()) {
+                tituloPanel.textContent = "Guardianes del Eje — Modo Pruebas";
+                textoPanel.textContent = "Los 3 Stages y todas las Naves están libres para probar.";
+            } else {
+                tituloPanel.textContent = "Guardianes del Eje";
+                if (sesionActual.mejorPuntuacion > 0 || G.Efectos.estaStageDesbloqueado(2)) {
+                    textoPanel.textContent = `Progreso guardado activo · Mejor Puntuación: ${sesionActual.mejorPuntuacion}`;
+                } else {
+                    textoPanel.textContent = "Supera cada Stage para desbloquear el siguiente sector y su nave.";
+                }
+            }
         } else if (estadoJuego === "naves") {
             tituloPanel.textContent = "Hangar de Naves";
-            textoPanel.textContent = "Elige qué nave utilizar en cada Stage:";
+            textoPanel.textContent = "Elige tu nave para cada Stage (tu selección queda guardada automáticamente):";
             sincronizarTarjetasNaves();
         } else if (estadoJuego === "pausado") {
             tituloPanel.textContent = "Juego pausado";
             textoPanel.textContent = `Stage ${stageActual} en pausa. Presiona P, ESC o Continuar.`;
         } else if (estadoJuego === "stage1-completado") {
             tituloPanel.textContent = "STAGE 1 COMPLETED";
-            textoPanel.textContent = `¡Has defendido el primer sector! Puntuación acumulada: ${puntuacionTotal}`;
+            textoPanel.textContent = `¡Stage 2 y Nave Artillada desbloqueados y guardados! Puntuación acumulada: ${puntuacionTotal}`;
         } else if (estadoJuego === "stage2-completado") {
             tituloPanel.textContent = "STAGE 2 COMPLETED";
-            textoPanel.textContent = `¡Sector exterior despejado! Adéntrate en las Cavernas de Cristal. Puntuación: ${puntuacionTotal}`;
+            textoPanel.textContent = `¡Stage 3 y Nave de Cristal desbloqueados y guardados! Puntuación acumulada: ${puntuacionTotal}`;
         } else if (estadoJuego === "victoria") {
-            tituloPanel.textContent = "¡VICTORIA TOTAL!";
-            textoPanel.textContent = `¡Has destruido a The Crystal Arch-Dreadnought y salvado el eje! Puntuación final: ${puntuacionTotal}`;
+            tituloPanel.textContent = "¡VICTORIA TOTAL — CRÉDITOS!";
+            textoPanel.textContent = `Puntuación Final: ${puntuacionTotal} · Récord: ${Math.max(puntuacionTotal, sesionActual.mejorPuntuacion || 0)}`;
         } else if (estadoJuego === "derrota") {
             tituloPanel.textContent = "Fin del juego";
             textoPanel.textContent = `Tu nave fue destruida en el Stage ${stageActual}. Puntuación: ${puntuacionTotal}`;
@@ -158,10 +259,8 @@ window.Guardianes = window.Guardianes || {};
             G.Efectos.detenerSacudida();
         }
         actualizarPanel();
-        if (nuevoEstado === "jugando") {
-            ultimoFrame = null;
-            solicitarFrame();
-        }
+        ultimoFrame = null;
+        solicitarFrame();
     }
 
     function solicitarFrame() {
@@ -182,12 +281,24 @@ window.Guardianes = window.Guardianes || {};
     }
 
     async function iniciarPartidaEnStage(numeroStage, conservarPuntos) {
+        if (!G.Efectos.estaStageDesbloqueado(numeroStage)) {
+            return;
+        }
         await prepararPantallaMovil();
         stageActual = numeroStage;
         if (!conservarPuntos) {
-            puntuacionTotal = 0;
+            // Si elige directamente un stage desbloqueado desde el menú, mantiene la base guardada si continúa su campaña o inicia limpio en Stage 1
+            if (numeroStage === 1) {
+                puntuacionTotal = 0;
+            }
         }
         puntuacionInicioStage = puntuacionTotal;
+        G.Efectos.actualizarSesion({
+            stageActual: stageActual,
+            puntuacionTotal: puntuacionTotal,
+            puntuacionInicioStage: puntuacionInicioStage,
+            ultimoEstadoMenu: "menu"
+        });
         G.Efectos.detenerSacudida();
         obtenerModuloStage().reiniciar(canvas);
         cambiarEstado("jugando");
@@ -195,16 +306,26 @@ window.Guardianes = window.Guardianes || {};
 
     function reiniciarStageActual() {
         puntuacionTotal = puntuacionInicioStage;
+        G.Efectos.actualizarSesion({
+            stageActual: stageActual,
+            puntuacionTotal: puntuacionTotal,
+            puntuacionInicioStage: puntuacionInicioStage
+        });
         G.Efectos.detenerSacudida();
         obtenerModuloStage().reiniciar(canvas);
         cambiarEstado("jugando");
     }
 
     function volverAlMenuPrincipal() {
-        puntuacionTotal = 0;
-        puntuacionInicioStage = 0;
+        if (window.location.hash === "#creditos" || window.location.search.includes("creditos=1")) {
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState(null, "", window.location.pathname.replace(/\/creditos\/?$/, "/"));
+            }
+        }
+        G.Efectos.actualizarSesion({
+            ultimoEstadoMenu: "menu"
+        });
         cambiarEstado("menu");
-        dibujarEscenaActual();
     }
 
     function alternarPausa() {
@@ -231,12 +352,24 @@ window.Guardianes = window.Guardianes || {};
             cambiarEstado("menu");
         } else if (estadoJuego === "stage1-completado" || estadoJuego === "stage2-completado") {
             avanzarSiguienteStage();
-        } else if (["derrota", "victoria", "tiempo-agotado"].includes(estadoJuego)) {
+        } else if (["derrota", "tiempo-agotado"].includes(estadoJuego)) {
             reiniciarStageActual();
+        } else if (estadoJuego === "victoria") {
+            volverAlMenuPrincipal();
         }
     }
 
+    function esEstadoConFondo3D() {
+        return estadoJuego === "menu" || estadoJuego === "naves" || estadoJuego === "victoria";
+    }
+
     function dibujarEscenaActual() {
+        if (esEstadoConFondo3D() && G.Menu3D) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            G.Menu3D.dibujarEscena3D(ctx, canvas, tiempoAnimacionMenu, estadoJuego === "victoria");
+            return;
+        }
+
         if (G.Recursos.hayError()) {
             mostrarMensajeCanvas(`Error al cargar: ${G.Recursos.obtenerRecursoFallido()}`);
             return;
@@ -260,12 +393,24 @@ window.Guardianes = window.Guardianes || {};
     }
 
     function debeContinuarBucle() {
-        if (estadoJuego === "jugando") return true;
+        if (estadoJuego === "jugando" || esEstadoConFondo3D()) return true;
         return obtenerModuloStage().tieneAnimacionPendiente(estadoJuego);
     }
 
     function bucleJuego(timestamp) {
         rafActivo = false;
+
+        const deltaSegundos = ultimoFrame === null
+            ? 0.016
+            : Math.min((timestamp - ultimoFrame) / 1000, 0.05);
+        ultimoFrame = timestamp;
+
+        if (esEstadoConFondo3D()) {
+            tiempoAnimacionMenu += deltaSegundos;
+            dibujarEscenaActual();
+            solicitarFrame();
+            return;
+        }
 
         if (G.Recursos.hayError()) {
             dibujarEscenaActual();
@@ -277,11 +422,6 @@ window.Guardianes = window.Guardianes || {};
             solicitarFrame();
             return;
         }
-
-        const deltaSegundos = ultimoFrame === null
-            ? 0
-            : Math.min((timestamp - ultimoFrame) / 1000, 0.05);
-        ultimoFrame = timestamp;
 
         if (debeContinuarBucle()) {
             G.Efectos.actualizarSacudida(deltaSegundos);
@@ -295,15 +435,39 @@ window.Guardianes = window.Guardianes || {};
         }
     }
 
+    function verificarRutaCreditos() {
+        const ruta = window.location.pathname || "";
+        const hash = window.location.hash || "";
+        const search = window.location.search || "";
+        if (
+            ruta.endsWith("/creditos") ||
+            ruta.endsWith("/creditos/") ||
+            hash === "#creditos" ||
+            hash === "#/creditos" ||
+            search.includes("creditos=1")
+        ) {
+            if (G.Sonido && G.Sonido.reproducirFanfarriaVictoria) {
+                G.Sonido.reproducirFanfarriaVictoria();
+            }
+            cambiarEstado("victoria");
+            return true;
+        }
+        return false;
+    }
+
+    window.addEventListener("hashchange", function() {
+        verificarRutaCreditos();
+    });
+
     // Inicialización de eventos de botones UI
     botonIniciarStage1.addEventListener("click", function() {
         iniciarPartidaEnStage(1, false);
     });
     botonIniciarStage2.addEventListener("click", function() {
-        iniciarPartidaEnStage(2, false);
+        iniciarPartidaEnStage(2, true);
     });
     botonIniciarStage3.addEventListener("click", function() {
-        iniciarPartidaEnStage(3, false);
+        iniciarPartidaEnStage(3, true);
     });
     botonAbrirNaves.addEventListener("click", function() {
         cambiarEstado("naves");
@@ -316,6 +480,9 @@ window.Guardianes = window.Guardianes || {};
         boton.addEventListener("click", function() {
             const st = Number(boton.getAttribute("data-stage"));
             const nv = Number(boton.getAttribute("data-nave"));
+            if (!G.Efectos.estaNaveHabilitadaParaStage(st, nv)) {
+                return;
+            }
             G.Efectos.configurarNaveParaStage(st, nv);
             sincronizarTarjetasNaves();
             if (G.Sonido) {
@@ -350,7 +517,18 @@ window.Guardianes = window.Guardianes || {};
     G.Stage2.reiniciar(canvas);
     G.Stage3.reiniciar(canvas);
     sincronizarTarjetasNaves();
-    actualizarPanel();
+
+    if (!verificarRutaCreditos()) {
+        // Si el jugador recargó la página justo en la pantalla de transición entre stages, restaurarla
+        if (
+            sesionInicial.ultimoEstadoMenu === "stage1-completado" ||
+            sesionInicial.ultimoEstadoMenu === "stage2-completado"
+        ) {
+            cambiarEstado(sesionInicial.ultimoEstadoMenu);
+        } else {
+            actualizarPanel();
+        }
+    }
 
     G.Recursos.inicializarRecursos(function() {
         if (estadoJuego !== "jugando") {

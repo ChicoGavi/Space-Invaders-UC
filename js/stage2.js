@@ -18,16 +18,16 @@ window.Guardianes = window.Guardianes || {};
     const enemigos2RequeridosParaJefe = 20;
     const jefesDerrotadosParaGanar = 3;
     const puntosPorMejora = 1000;
-    const intervaloAparicion = 3;
-    const intervaloEnemigoApoyo = 5;
-    const primerPoderEn = 8;
-    const intervaloPoderes = 15;
+    const intervaloAparicion = 2.6;
+    const intervaloEnemigoApoyo = 4.5;
+    const primerPoderEn = 13;
+    const intervaloPoderes = 21;
 
     const configuracionEnemigos = {
-        1: { ancho: 64, alto: 64, vida: 1, velocidad: 100, intervaloDisparo: [0.9, 1.6], disparos: [1, 2], rapidezDisparo: 185 },
-        2: { ancho: 112, alto: 60, vida: 4, velocidad: 130, intervaloDisparo: [0.7, 1.3], disparos: [1, 3], rapidezDisparo: 205 },
-        3: { ancho: 138, alto: 82, vida: 180, velocidad: 105, intervaloDisparo: [1.6, 2.2], disparos: [2, 2], rapidezDisparo: 165 },
-        4: { ancho: 190, alto: 112, vida: 260, velocidad: 135, intervaloDisparo: [1.2, 1.8], disparos: [3, 4], rapidezDisparo: 200 }
+        1: { ancho: 64, alto: 64, vida: 1, velocidad: 110, intervaloDisparo: [0.85, 1.5], disparos: [1, 2], rapidezDisparo: 195 },
+        2: { ancho: 112, alto: 60, vida: 4, velocidad: 140, intervaloDisparo: [0.65, 1.2], disparos: [1, 3], rapidezDisparo: 215 },
+        3: { ancho: 138, alto: 82, vida: 120, velocidad: 110, intervaloDisparo: [1.5, 2.1], disparos: [2, 2], rapidezDisparo: 170 },
+        4: { ancho: 190, alto: 112, vida: 175, velocidad: 130, intervaloDisparo: [1.25, 1.85], disparos: [3, 3], rapidezDisparo: 190 }
     };
     const secuenciaPoderes = ["arma", "escudo", "vida"];
 
@@ -405,21 +405,21 @@ window.Guardianes = window.Guardianes || {};
             if (G.Sonido) {
                 G.Sonido.reproducirLaser(true);
             }
-            const cantidadRadial = 10;
+            const cantidadRadial = 8;
             for (let indice = 0; indice < cantidadRadial; indice++) {
                 const angulo = (Math.PI * 2 * indice) / cantidadRadial +
                     enemigo.fase * 0.2;
                 disparosEnemigo.push({
                     x: centroX,
                     y: centroY,
-                    vx: Math.cos(angulo) * 175,
-                    vy: Math.sin(angulo) * 175,
+                    vx: Math.cos(angulo) * 165,
+                    vy: Math.sin(angulo) * 165,
                     tipo: "espina",
                     radio: 5,
                     angulo
                 });
             }
-            enemigo.proximoRadial = elapsed + 6;
+            enemigo.proximoRadial = elapsed + 7;
         }
 
         enemigo.proximoDisparo = elapsed +

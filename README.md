@@ -29,7 +29,15 @@ También se puede abrir `index.html` directamente en el navegador (`file://`), g
 | Pausar o reanudar | `P` o `Escape` | Botón **Ⅱ / ▶** o botón **Continuar** |
 | Reiniciar / Menú | `Enter` o botones del panel | Botones **Reiniciar Stage** / **Menú principal** |
 
-## Progresión del Juego
+## Progresión del Juego y Desbloqueos
+
+- **Menú Principal 3D (Space Invaders Voxel 3D)**: El menú principal, el hangar de naves y la pantalla de créditos cuentan con una escena 3D en tiempo real de *Space Invaders* con cámara orbital, horizonte synthwave y disparos láser 3D.
+- **Desbloqueo Progresivo**:
+  - Al iniciar por primera vez, solo el **Stage 1** y las naves por defecto de cada etapa están habilitadas (`Stage 2 🔒` y `Stage 3 🔒` permanecen bloqueados).
+  - Al superar el **Stage 1**, se desbloquean el **Stage 2** y la **Nave Artillada**.
+  - Al superar el **Stage 2**, se desbloquean el **Stage 3** y la **Nave de Cristal**.
+  - Al superar los **3 Stages**, se despliega la pantalla de **Créditos Finales** con el mensaje de felicitaciones y los datos del equipo creador.
+- **Ruta de Créditos (`/creditos`)**: Puedes acceder directamente a los créditos para probarlos navegando a <http://localhost:8000/creditos> (o añadiendo `#creditos` / `?creditos=1` a la URL).
 
 ### Stage 1
 - El jugador cuenta con **6 vidas**.
@@ -75,9 +83,12 @@ js/
   recursos.js       Precarga, caché y verificación de las 27 imágenes del juego
   sonido.js         Sintetizador Web Audio API (disparos, láseres, daño y sirena sísmica de Boss Final)
   entrada.js        Gestor unificado de teclado, clic izquierdo del mouse, joystick táctil y pantalla completa
-  efectos.js        Colisiones, HUD superior, Hangar de Naves por Stage y sacudida de pantalla (Screen Shake)
+  efectos.js        Colisiones, HUD superior, desbloqueo de Stages/Naves y sacudida de pantalla (Screen Shake)
+  menu3d.js         Motor de animación 3D de Space Invaders (Voxel 3D, cámara orbital y horizonte synthwave)
   stage1.js         Lógica, enemigos, jefe final y renderizado del Stage 1
   stage2.js         Lógica, enemigos, 3 jefes, drones auxiliares y partículas del Stage 2
   stage3.js         Lógica, Nave de Cristal (4 estados), 4 enemigos y Arch-Dreadnought del Stage 3
-  juego.js          Controlador principal, máquina de estados y Game Loop único
+  juego.js          Controlador principal, máquina de estados, ruta /creditos y Game Loop único
+creditos/
+  index.html        Punto de entrada para la ruta directa /creditos
 ```

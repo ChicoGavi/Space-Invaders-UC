@@ -1,10 +1,27 @@
 /**
  * Utilidades de Colisión, Geometría, Efectos Visuales Compartidos,
- * Sacudida de Pantalla (Screen Shake) y Renderizado de Nave Elegida.
+ * Sacudida de Pantalla (Screen Shake), Desbloqueo Progresivo y Persistencia en localStorage.
  */
 window.Guardianes = window.Guardianes || {};
 
 (function(G) {
+    function esModoPruebas() {
+        const ruta = window.location.pathname || "";
+        const hash = window.location.hash || "";
+        const search = window.location.search || "";
+        return Boolean(
+            window.GUARDIANES_MODO_PRUEBAS ||
+            ruta.includes("/pruebas") ||
+            hash === "#pruebas" ||
+            hash === "#/pruebas" ||
+            search.includes("pruebas=1")
+        );
+    }
+
+    const CLAVE_STORAGE = esModoPruebas()
+        ? "guardianes_del_eje_pruebas_v1"
+        : "guardianes_del_eje_sesion_v1";
+
     // Selección de nave para cada stage (por defecto: Stage 1 -> Nave 1, Stage 2 -> Nave 2, Stage 3 -> Nave 3)
     const navesPorStage = {
         1: 1,
@@ -12,15 +29,158 @@ window.Guardianes = window.Guardianes || {};
         3: 3
     };
 
+    const stagesDesbloqueados = {
+        1: true,
+        2: esModoPruebas(),
+        3: esModoPruebas()
+    };
+
+    const navesDesbloqueadasGlobal = {
+        1: true,
+        2: esModoPruebas(),
+        3: esModoPruebas()
+    };
+
+    // Estado de sesión persistido para sobrevivir a recargas de página
+    const sesionGuardada = {
+        stageActual: 1,
+        puntuacionTotal: 0,
+        puntuacionInicioStage: 0,
+        mejorPuntuacion: 0,
+        ultimoEstadoMenu: "menu" // "menu", "stage1-completado", "stage2-completado", "victoria"
+    };
+
     // Estado de sacudida de pantalla (Screen Shake)
     let sacudidaRestante = 0;
     let sacudidaDuracionTotal = 0;
     let sacudidaIntensidad = 0;
 
-    function configurarNaveParaStage(stage, tipoNave) {
-        if ([1, 2, 3].includes(stage) && [1, 2, 3].includes(Number(tipoNave))) {
-            navesPorStage[stage] = Number(tipoNave);
+    function guardarProgresoEnStorage() {
+        try {
+            const payload = {
+                navesPorStage: Object.assign({}, navesPorStage),
+                stagesDesbloqueados: Object.assign({}, stagesDesbloqueados),
+                navesDesbloqueadasGlobal: Object.assign({}, navesDesbloqueadasGlobal),
+                sesion: Object.assign({}, sesionGuardada)
+            };
+            const serializado = JSON.stringify(payload);
+            if (window.localStorage) {
+                window.localStorage.setItem(CLAVE_STORAGE, serializado);
+            }
+            if (window.sessionStorage) {
+                window.sessionStorage.setItem(CLAVE_STORAGE, serializado);
+            }
+        } catch (error) {
+            console.warn("No se pudo guardar la sesión en Web Storage:", error);
         }
+    }
+
+    function cargarProgresoDesdeStorage() {
+        try {
+            const raw = (window.localStorage && window.localStorage.getItem(CLAVE_STORAGE)) ||
+                        (window.sessionStorage && window.sessionStorage.getItem(CLAVE_STORAGE));
+            if (!raw) return false;
+            const datos = JSON.parse(raw);
+            if (!datos || typeof datos !== "object") return false;
+
+            if (datos.stagesDesbloqueados) {
+                stagesDesbloqueados[1] = true;
+                stagesDesbloqueados[2] = esModoPruebas() || Boolean(datos.stagesDesbloqueados[2]);
+                stagesDesbloqueados[3] = esModoPruebas() || Boolean(datos.stagesDesbloqueados[3]);
+            }
+            if (datos.navesDesbloqueadasGlobal) {
+                navesDesbloqueadasGlobal[1] = true;
+                navesDesbloqueadasGlobal[2] = esModoPruebas() || Boolean(datos.navesDesbloqueadasGlobal[2]);
+                navesDesbloqueadasGlobal[3] = esModoPruebas() || Boolean(datos.navesDesbloqueadasGlobal[3]);
+            }
+            if (datos.navesPorStage) {
+                for (const st of [1, 2, 3]) {
+                    const nv = Number(datos.navesPorStage[st]);
+                    if ([1, 2, 3].includes(nv) && estaNaveHabilitadaParaStage(st, nv)) {
+                        navesPorStage[st] = nv;
+                    }
+                }
+            }
+            if (datos.sesion && typeof datos.sesion === "object") {
+                if ([1, 2, 3].includes(Number(datos.sesion.stageActual))) {
+                    sesionGuardada.stageActual = Number(datos.sesion.stageActual);
+                }
+                if (typeof datos.sesion.puntuacionTotal === "number") {
+                    sesionGuardada.puntuacionTotal = Math.max(0, datos.sesion.puntuacionTotal);
+                }
+                if (typeof datos.sesion.puntuacionInicioStage === "number") {
+                    sesionGuardada.puntuacionInicioStage = Math.max(0, datos.sesion.puntuacionInicioStage);
+                }
+                if (typeof datos.sesion.mejorPuntuacion === "number") {
+                    sesionGuardada.mejorPuntuacion = Math.max(0, datos.sesion.mejorPuntuacion);
+                }
+                if (typeof datos.sesion.ultimoEstadoMenu === "string") {
+                    sesionGuardada.ultimoEstadoMenu = datos.sesion.ultimoEstadoMenu;
+                }
+            }
+            return true;
+        } catch (error) {
+            console.warn("No se pudo restaurar la sesión desde Web Storage:", error);
+            return false;
+        }
+    }
+
+    function actualizarSesion(cambios) {
+        if (!cambios || typeof cambios !== "object") return;
+        Object.assign(sesionGuardada, cambios);
+        if (sesionGuardada.puntuacionTotal > sesionGuardada.mejorPuntuacion) {
+            sesionGuardada.mejorPuntuacion = sesionGuardada.puntuacionTotal;
+        }
+        guardarProgresoEnStorage();
+    }
+
+    function obtenerSesion() {
+        return Object.assign({}, sesionGuardada);
+    }
+
+    function estaStageDesbloqueado(stage) {
+        if (esModoPruebas()) return true;
+        return Boolean(stagesDesbloqueados[stage]);
+    }
+
+    function desbloquearStage(stage) {
+        if ([1, 2, 3].includes(Number(stage))) {
+            stagesDesbloqueados[Number(stage)] = true;
+            guardarProgresoEnStorage();
+        }
+    }
+
+    function desbloquearNave(tipoNave) {
+        if ([1, 2, 3].includes(Number(tipoNave))) {
+            navesDesbloqueadasGlobal[Number(tipoNave)] = true;
+            guardarProgresoEnStorage();
+        }
+    }
+
+    /**
+     * Una nave puede seleccionarse en un Stage si:
+     * - Es la nave por defecto de ese Stage (stage === tipoNave), O
+     * - Ya fue desbloqueada al superar su Stage correspondiente.
+     */
+    function estaNaveHabilitadaParaStage(stage, tipoNave) {
+        if (esModoPruebas()) return true;
+        const st = Number(stage);
+        const nv = Number(tipoNave);
+        if (st === nv) return true;
+        return Boolean(navesDesbloqueadasGlobal[nv]);
+    }
+
+    function configurarNaveParaStage(stage, tipoNave) {
+        const st = Number(stage);
+        const nv = Number(tipoNave);
+        if ([1, 2, 3].includes(st) && [1, 2, 3].includes(nv)) {
+            if (estaNaveHabilitadaParaStage(st, nv)) {
+                navesPorStage[st] = nv;
+                guardarProgresoEnStorage();
+                return true;
+            }
+        }
+        return false;
     }
 
     function obtenerNaveParaStage(stage) {
@@ -50,7 +210,6 @@ window.Guardianes = window.Guardianes || {};
         if (sacudidaRestante <= 0 || sacudidaDuracionTotal <= 0) {
             return { x: 0, y: 0, activa: false };
         }
-        // Atenuación suave hacia el final, manteniendo fuerza durante la entrada del jefe
         const progreso = sacudidaRestante / sacudidaDuracionTotal;
         const factor = Math.min(1, progreso * 1.35);
         const magnitud = sacudidaIntensidad * factor;
@@ -200,11 +359,23 @@ window.Guardianes = window.Guardianes || {};
         ctx.restore();
     }
 
+    // Cargar estado guardado inmediatamente al inicializar el módulo
+    cargarProgresoDesdeStorage();
+
     G.Efectos = {
         seSuperponen,
         circuloTocaRectangulo,
         obtenerColorRGBA,
         dibujarHUDSuperior,
+        esModoPruebas,
+        cargarProgresoDesdeStorage,
+        guardarProgresoEnStorage,
+        actualizarSesion,
+        obtenerSesion,
+        estaStageDesbloqueado,
+        desbloquearStage,
+        desbloquearNave,
+        estaNaveHabilitadaParaStage,
         configurarNaveParaStage,
         obtenerNaveParaStage,
         dibujarNaveJugador,

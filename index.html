@@ -7,7 +7,7 @@
 
     <title>Guardianes del Eje</title>
 
-    <link rel="stylesheet" href="css/estilos.css?v=3.2">
+    <link rel="stylesheet" href="css/estilos.css?v=3.6">
 </head>
 
 <body>
@@ -16,7 +16,7 @@
 
     <!--
         Este canvas será el escenario donde
-        JavaScript dibujará nuestro videojuego (Stage 1, Stage 2 y Stage 3).
+        JavaScript dibujará nuestro videojuego (Stage 1, Stage 2, Stage 3 y Animación 3D).
     -->
     <div id="escenario">
         <canvas
@@ -41,7 +41,7 @@
             <button id="boton-pausa" class="boton-pausa-movil" type="button" aria-label="Pausar juego" aria-pressed="false">Ⅱ</button>
         </div>
 
-        <!-- Panel modal unificado para Menú, Selector de Naves, Pausa, Transición de Stage, Victoria y Derrota -->
+        <!-- Panel modal unificado para Menú 3D, Hangar de Naves, Pausa, Transición de Stage, Victoria/Créditos y Derrota -->
         <section id="panel-juego" class="panel-juego" role="dialog" aria-modal="true" aria-labelledby="titulo-panel" aria-live="polite">
             <div class="contenido-panel">
                 <h2 id="titulo-panel">Guardianes del Eje</h2>
@@ -54,15 +54,15 @@
                         <div class="opciones-nave" role="group" aria-label="Nave para Stage 1">
                             <button type="button" class="opcion-nave activa" data-stage="1" data-nave="1">
                                 <img src="img/jugador.png" alt="Nave Clásica">
-                                <span>Clásica</span>
+                                <span class="nombre-opcion-nave">Clásica</span>
                             </button>
                             <button type="button" class="opcion-nave" data-stage="1" data-nave="2">
                                 <img src="img/jugador_stage_2.gif" alt="Nave Artillada">
-                                <span>Artillada</span>
+                                <span class="nombre-opcion-nave">Artillada</span>
                             </button>
                             <button type="button" class="opcion-nave" data-stage="1" data-nave="3">
                                 <img src="img/jugador_stage_3_idle.png" alt="Nave de Cristal">
-                                <span>Cristal</span>
+                                <span class="nombre-opcion-nave">Cristal</span>
                             </button>
                         </div>
                     </div>
@@ -72,15 +72,15 @@
                         <div class="opciones-nave" role="group" aria-label="Nave para Stage 2">
                             <button type="button" class="opcion-nave" data-stage="2" data-nave="1">
                                 <img src="img/jugador.png" alt="Nave Clásica">
-                                <span>Clásica</span>
+                                <span class="nombre-opcion-nave">Clásica</span>
                             </button>
                             <button type="button" class="opcion-nave activa" data-stage="2" data-nave="2">
                                 <img src="img/jugador_stage_2.gif" alt="Nave Artillada">
-                                <span>Artillada</span>
+                                <span class="nombre-opcion-nave">Artillada</span>
                             </button>
                             <button type="button" class="opcion-nave" data-stage="2" data-nave="3">
                                 <img src="img/jugador_stage_3_idle.png" alt="Nave de Cristal">
-                                <span>Cristal</span>
+                                <span class="nombre-opcion-nave">Cristal</span>
                             </button>
                         </div>
                     </div>
@@ -90,24 +90,50 @@
                         <div class="opciones-nave" role="group" aria-label="Nave para Stage 3">
                             <button type="button" class="opcion-nave" data-stage="3" data-nave="1">
                                 <img src="img/jugador.png" alt="Nave Clásica">
-                                <span>Clásica</span>
+                                <span class="nombre-opcion-nave">Clásica</span>
                             </button>
                             <button type="button" class="opcion-nave" data-stage="3" data-nave="2">
                                 <img src="img/jugador_stage_2.gif" alt="Nave Artillada">
-                                <span>Artillada</span>
+                                <span class="nombre-opcion-nave">Artillada</span>
                             </button>
                             <button type="button" class="opcion-nave activa" data-stage="3" data-nave="3">
                                 <img src="img/jugador_stage_3_idle.png" alt="Nave de Cristal">
-                                <span>Cristal</span>
+                                <span class="nombre-opcion-nave">Cristal</span>
                             </button>
                         </div>
                     </div>
                 </div>
 
+                <!-- Sub-panel de Créditos Finales (al superar los 3 Stages o entrar en /creditos) -->
+                <div id="bloque-creditos" class="bloque-creditos" hidden>
+                    <div class="medalla-victoria">★ CAMPAÑA COMPLETADA — GUARDIÁN DEL EJE ★</div>
+                    <p class="felicitacion-creditos">
+                        ¡Felicitaciones, Guardián! Has superado los 3 Stages, derrotado a las fuerzas invasoras y restaurado el equilibrio del Eje.
+                    </p>
+                    <div class="tarjeta-creditos">
+                        <div class="item-credito">
+                            <span class="etiqueta-credito">Creadores</span>
+                            <ul class="lista-creadores">
+                                <li>Santiago Gaviria</li>
+                                <li>Oscar Julian Sepulveda</li>
+                                <li>Andres Gonzales</li>
+                            </ul>
+                        </div>
+                        <div class="item-credito">
+                            <span class="etiqueta-credito">Módulo</span>
+                            <p class="valor-credito">Electiva UC</p>
+                        </div>
+                        <div class="item-credito">
+                            <span class="etiqueta-credito">Profesor</span>
+                            <p class="valor-credito">Geovanny Gomez Orozco</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="acciones-panel">
-                    <button id="iniciar-stage1" type="button">Jugar Campaña (Stage 1)</button>
-                    <button id="iniciar-stage2" type="button" class="boton-secundario">Jugar Stage 2</button>
-                    <button id="iniciar-stage3" type="button" class="boton-secundario">Jugar Stage 3</button>
+                    <button id="iniciar-stage1" type="button">Jugar Stage 1</button>
+                    <button id="iniciar-stage2" type="button" class="boton-secundario" disabled>Stage 2 🔒</button>
+                    <button id="iniciar-stage3" type="button" class="boton-secundario" disabled>Stage 3 🔒</button>
                     <button id="abrir-naves" type="button" class="boton-naves">Naves</button>
                     <button id="cerrar-naves" type="button" hidden>Guardar y Volver</button>
                     <button id="siguiente-stage" type="button" hidden>Avanzar al siguiente Stage</button>
@@ -133,14 +159,15 @@
     <p>En celular horizontal, usa el joystick y los botones táctiles dentro del juego.</p>
 
     <!-- Módulos JavaScript del videojuego -->
-    <script src="js/recursos.js?v=3.2"></script>
-    <script src="js/sonido.js?v=3.2"></script>
-    <script src="js/entrada.js?v=3.2"></script>
-    <script src="js/efectos.js?v=3.2"></script>
-    <script src="js/stage1.js?v=3.2"></script>
-    <script src="js/stage2.js?v=3.2"></script>
-    <script src="js/stage3.js?v=3.2"></script>
-    <script src="js/juego.js?v=3.2"></script>
+    <script src="js/recursos.js?v=3.7"></script>
+    <script src="js/sonido.js?v=3.7"></script>
+    <script src="js/entrada.js?v=3.7"></script>
+    <script src="js/efectos.js?v=3.7"></script>
+    <script src="js/menu3d.js?v=3.7"></script>
+    <script src="js/stage1.js?v=3.7"></script>
+    <script src="js/stage2.js?v=3.7"></script>
+    <script src="js/stage3.js?v=3.7"></script>
+    <script src="js/juego.js?v=3.7"></script>
 
 </body>
 

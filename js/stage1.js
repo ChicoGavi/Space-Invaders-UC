@@ -12,9 +12,9 @@
 window.Guardianes = window.Guardianes || {};
 
 (function(G) {
-    const intervaloEnemigos = 1800;
-    const velocidadDesplazamientoEscenario = 0.21;
-    const intervaloEnemigoDos = 14000;
+    const intervaloEnemigos = 2250;
+    const velocidadDesplazamientoEscenario = 0.25;
+    const intervaloEnemigoDos = 16500;
 
     const jugador = {
         x: 368,
@@ -47,7 +47,7 @@ window.Guardianes = window.Guardianes || {};
     let victoriaEnCurso = false;
     let invulnerableHasta = 0;
     let ultimoDisparo = -Infinity;
-    let siguientePotenciador = 8000;
+    let siguientePotenciador = 3200;
     let siguienteEnemigo = 0;
     let siguienteEnemigoDos = 0;
     let potenciador = null;
@@ -78,7 +78,7 @@ window.Guardianes = window.Guardianes || {};
         victoriaEnCurso = false;
         invulnerableHasta = 0;
         ultimoDisparo = -Infinity;
-        siguientePotenciador = 8000;
+        siguientePotenciador = 3200;
         siguienteEnemigo = 0;
         siguienteEnemigoDos = 0;
         potenciador = null;
@@ -203,9 +203,9 @@ window.Guardianes = window.Guardianes || {};
                 y: -alto,
                 ancho: ancho,
                 alto: alto,
-                velocidadX: direccion * (0.45 + Math.random() * 1.05),
-                velocidadY: 1.6 + Math.random() * 0.5,
-                siguienteDisparo: ahora + 1800 + Math.random() * 1000
+                velocidadX: direccion * (0.4 + Math.random() * 0.8),
+                velocidadY: 1.35 + Math.random() * 0.4,
+                siguienteDisparo: ahora + 2200 + Math.random() * 1200
             });
             siguienteEnemigo = ahora + intervaloEnemigos;
         }
@@ -222,7 +222,7 @@ window.Guardianes = window.Guardianes || {};
 
             if (ahora >= enemigo.siguienteDisparo) {
                 crearDisparoEnemigo(enemigo);
-                enemigo.siguienteDisparo = ahora + 2800;
+                enemigo.siguienteDisparo = ahora + 3300;
             }
 
             if (enemigo.y > canvas.height) {
@@ -267,10 +267,10 @@ window.Guardianes = window.Guardianes || {};
                 faseMovimiento: Math.random() * Math.PI * 2,
                 ancho: ancho,
                 alto: alto,
-                velocidadX: desdeIzquierda ? 1.25 : -1.25,
-                resistencia: 20,
-                resistenciaMaxima: 20,
-                siguienteDisparo: ahora + 1800
+                velocidadX: desdeIzquierda ? 1.15 : -1.15,
+                resistencia: 12,
+                resistenciaMaxima: 12,
+                siguienteDisparo: ahora + 2100
             });
             siguienteEnemigoDos = ahora + intervaloEnemigoDos;
         }
@@ -290,7 +290,7 @@ window.Guardianes = window.Guardianes || {};
 
             if (ahora >= enemigo.siguienteDisparo) {
                 lanzarCoheteEnemigo(enemigo);
-                enemigo.siguienteDisparo = ahora + 3200;
+                enemigo.siguienteDisparo = ahora + 3800;
             }
         }
 
@@ -363,9 +363,9 @@ window.Guardianes = window.Guardianes || {};
                 lanzarSalvaEnemigoTres(enemigo);
                 enemigo.disparosEnRafaga++;
                 enemigo.siguienteDisparo = ahora + (
-                    enemigo.disparosEnRafaga >= 5 ? 3200 : 220
+                    enemigo.disparosEnRafaga >= 4 ? 3800 : 260
                 );
-                if (enemigo.disparosEnRafaga >= 5) {
+                if (enemigo.disparosEnRafaga >= 4) {
                     enemigo.disparosEnRafaga = 0;
                 }
             }
@@ -396,7 +396,6 @@ window.Guardianes = window.Guardianes || {};
             enemigosTres.length = 0;
             disparosEnemigos.length = 0;
             cohetesEnemigos.length = 0;
-            potenciador = null;
             const ancho = 156;
             const alto = 228;
             jefeFinal = {
@@ -406,8 +405,8 @@ window.Guardianes = window.Guardianes || {};
                 alto: alto,
                 centroMovimientoX: canvas.width / 2,
                 amplitudMovimientoX: (canvas.width - ancho - 44) / 2,
-                resistencia: 300,
-                resistenciaMaxima: 300,
+                resistencia: 110,
+                resistenciaMaxima: 110,
                 fase: "entrada",
                 velocidadEntrada: 3.2,
                 siguienteDisparoDirigido: Infinity,
@@ -442,22 +441,22 @@ window.Guardianes = window.Guardianes || {};
             const centroX = jefeFinal.x + jefeFinal.ancho / 2;
             const centroY = jefeFinal.y + jefeFinal.alto * 0.72;
             if (ahora >= jefeFinal.siguienteDisparoDirigido) {
-                crearDisparoEnemigo(jefeFinal, 1.2);
-                jefeFinal.siguienteDisparoDirigido = ahora + 1000;
+                crearDisparoEnemigo(jefeFinal, 0.9);
+                jefeFinal.siguienteDisparoDirigido = ahora + 1700;
             }
 
             if (ahora >= jefeFinal.siguienteCohete) {
-                lanzarCoheteEnemigo(jefeFinal, 1.2);
-                jefeFinal.siguienteCohete = ahora + 1900;
+                lanzarCoheteEnemigo(jefeFinal, 0.9);
+                jefeFinal.siguienteCohete = ahora + 3100;
             }
 
             if (ahora >= jefeFinal.siguienteRafaga) {
-                lanzarSalvaEnemigoTresDesde(centroX, centroY, 1.2);
+                lanzarSalvaEnemigoTresDesde(centroX, centroY, 0.9);
                 jefeFinal.disparosRafaga++;
                 jefeFinal.siguienteRafaga = ahora + (
-                    jefeFinal.disparosRafaga >= 5 ? 1500 : 180
+                    jefeFinal.disparosRafaga >= 3 ? 2600 : 280
                 );
-                if (jefeFinal.disparosRafaga >= 5) {
+                if (jefeFinal.disparosRafaga >= 3) {
                     jefeFinal.disparosRafaga = 0;
                 }
             }
@@ -517,8 +516,8 @@ window.Guardianes = window.Guardianes || {};
             faseMovimiento: faseMovimiento,
             entradaCompleta: false,
             velocidadEntrada: 1.35,
-            resistencia: 50,
-            resistenciaMaxima: 50,
+            resistencia: 26,
+            resistenciaMaxima: 26,
             disparosEnRafaga: 0,
             siguienteDisparo: Infinity
         };
@@ -593,7 +592,8 @@ window.Guardianes = window.Guardianes || {};
             return;
         }
 
-        if (!potenciador && !jefeFinalActivo && tiempoEscenario >= siguientePotenciador) {
+        const jefeDestruyendose = jefeFinal && jefeFinal.fase === "destruccion";
+        if (!potenciador && !jefeDestruyendose && !victoriaEnCurso && tiempoEscenario >= siguientePotenciador) {
             potenciador = {
                 x: Math.random() * (canvas.width - 40),
                 y: 30,
@@ -795,7 +795,7 @@ window.Guardianes = window.Guardianes || {};
     }
 
     function obtenerIntervaloPotenciador() {
-        return Math.min(8000 + tiempoEscenario * 0.1, 18000);
+        return Math.min(4500 + tiempoEscenario * 0.04, 8000);
     }
 
     function dibujar(ctx, canvas, contextoJuego) {
